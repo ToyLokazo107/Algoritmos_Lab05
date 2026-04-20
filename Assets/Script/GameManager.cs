@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using TMPro;
 using Sirenix.OdinInspector;
@@ -13,13 +12,36 @@ public class GameManager : MonoBehaviour
     private int playerLife = 100;
     private int playerAttack = 10;
 
-    private Coroutine autoPlayCoroutine;
-    public float autoPlaySpeed = 1f;
+    private bool isPlaying = false;
+    private float timer = 0f;
+    public float delay = 1f;
 
     void Start()
     {
         SaveTurn();
         UpdateView();
+    }
+
+    void Update()
+    {
+        if (!isPlaying || timeline.pivot == null)
+            return;
+
+        timer += Time.deltaTime;
+
+        if (timer >= delay)
+        {
+            timer = 0f;
+
+            ApplyTurn();
+
+            timeline.pivot = timeline.pivot.Next;
+
+            if (timeline.pivot == null)
+            {
+                isPlaying = false;
+            }
+        }
     }
 
     [Button]
@@ -132,36 +154,17 @@ public class GameManager : MonoBehaviour
     [Button]
     public void PlayAuto()
     {
-        if (autoPlayCoroutine != null)
-            StopCoroutine(autoPlayCoroutine);
+        if (timeline.head == null)
+            return;
 
-        autoPlayCoroutine = StartCoroutine(AutoPlayRoutine());
+        isPlaying = true;
+        timer = 0f;
+        timeline.pivot = timeline.head;
     }
 
     [Button]
     public void StopAuto()
     {
-        if (autoPlayCoroutine != null)
-        {
-            StopCoroutine(autoPlayCoroutine);
-            autoPlayCoroutine = null;
-        }
-    }
-
-    IEnumerator AutoPlayRoutine()
-    {
-        if (timeline.head == null)
-            yield break;
-
-        timeline.pivot = timeline.head;
-
-        while (timeline.pivot != null)
-        {
-            ApplyTurn();
-
-            yield return new WaitForSeconds(autoPlaySpeed);
-
-            timeline.pivot = timeline.pivot.Next;
-        }
+        isPlaying = false;
     }
 }
